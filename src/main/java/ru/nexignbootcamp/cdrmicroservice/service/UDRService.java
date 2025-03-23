@@ -1,5 +1,6 @@
 package ru.nexignbootcamp.cdrmicroservice.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.nexignbootcamp.cdrmicroservice.DTO.UDRDto;
@@ -10,20 +11,17 @@ import ru.nexignbootcamp.cdrmicroservice.repository.SubscriberRepository;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Сервис для получения отчетов UDR (Usage Data Records).
  * Предоставляет данные об использовании услуг абонентами.
  */
 @Service
+@RequiredArgsConstructor
 public class UDRService {
     private final CDRRecordRepository cdrRecordRepository;
     private final SubscriberRepository subscriberRepository;
-
-    public UDRService(CDRRecordRepository cdrRecordRepository, SubscriberRepository subscriberRepository) {
-        this.cdrRecordRepository = cdrRecordRepository;
-        this.subscriberRepository = subscriberRepository;
-    }
 
     /**
      * Возвращает отчет UDR для указанного абонента.
@@ -45,8 +43,8 @@ public class UDRService {
             outgoingSeconds = cdrRecordRepository.getTotalOutgoingSeconds(msisdn);
             incomingSeconds = cdrRecordRepository.getTotalIncomingSeconds(msisdn);
         }
-        outgoingSeconds = (outgoingSeconds == null) ? 0L : outgoingSeconds;
-        incomingSeconds = (incomingSeconds == null) ? 0L : incomingSeconds;
+        outgoingSeconds = Optional.ofNullable(outgoingSeconds).orElse(0L);
+        incomingSeconds = Optional.ofNullable(incomingSeconds).orElse(0L);
 
         UDRDto udr = new UDRDto();
         udr.setMsisdn(msisdn);
@@ -73,14 +71,17 @@ public class UDRService {
         System.out.println(outgoingTotals.get(0).getMsisdn());
         System.out.println(outgoingTotals.get(0).getTotalDurationInSeconds());
 
-        Map<String, Long> outgoingMap = new HashMap<>();
-        for (CDRRecordRepository.CallDurationSummary row : outgoingTotals) {
-            outgoingMap.put(row.getMsisdn(), row.getTotalDurationInSeconds());
-        }
-        Map<String, Long> incomingMap = new HashMap<>();
-        for (CDRRecordRepository.CallDurationSummary row : incomingTotals) {
-            incomingMap.put(row.getMsisdn(), row.getTotalDurationInSeconds());
-        }
+        Map<String, Long> outgoingMap = outgoingTotals.stream()
+                .collect(Collectors.toMap(
+                        CDRRecordRepository.CallDurationSummary::getMsisdn,
+                        CDRRecordRepository.CallDurationSummary::getTotalDurationInSeconds
+                ));
+
+        Map<String, Long> incomingMap = incomingTotals.stream()
+                .collect(Collectors.toMap(
+                        CDRRecordRepository.CallDurationSummary::getMsisdn,
+                        CDRRecordRepository.CallDurationSummary::getTotalDurationInSeconds
+                ));
 
         List<Subscriber> subscribers = subscriberRepository.findAll();
         List<UDRDto> udrs = new ArrayList<>();

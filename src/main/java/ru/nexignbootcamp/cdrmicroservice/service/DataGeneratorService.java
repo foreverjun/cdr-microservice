@@ -1,5 +1,6 @@
 package ru.nexignbootcamp.cdrmicroservice.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.nexignbootcamp.cdrmicroservice.model.CDRRecord;
@@ -8,6 +9,7 @@ import ru.nexignbootcamp.cdrmicroservice.repository.CDRRecordRepository;
 import ru.nexignbootcamp.cdrmicroservice.repository.SubscriberRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -16,14 +18,11 @@ import java.util.Random;
  * Создает абонентов и записи CDR.
  */
 @Service
+@RequiredArgsConstructor
 public class DataGeneratorService {
     private final SubscriberRepository subscriberRepository;
     private final CDRRecordRepository cdrRecordRepository;
 
-    public DataGeneratorService(SubscriberRepository subscriberRepository, CDRRecordRepository cdrRecordRepository) {
-        this.subscriberRepository = subscriberRepository;
-        this.cdrRecordRepository = cdrRecordRepository;
-    }
 
     private final Random random = new Random(42);
 
@@ -38,6 +37,7 @@ public class DataGeneratorService {
         LocalDateTime endTime = currentTime.plusYears(1);
         List<Subscriber> subscribers = subscriberRepository.findAll();
 
+        ArrayList<CDRRecord> records = new ArrayList<>();
         while (currentTime.isBefore(endTime)) {
             Subscriber subscriber = subscribers.get(random.nextInt(subscribers.size()));
             String callType = random.nextBoolean() ? "01" : "02";
@@ -54,11 +54,12 @@ public class DataGeneratorService {
             record.setReceiverMsisdn(receiverMsisdn);
             record.setStartTime(startTime);
             record.setEndTime(callEndTime);
-            cdrRecordRepository.save(record);
+            records.add(record);
 
             int minutes = random.nextInt(60) + 1; // Интервал 1-20 минут
             currentTime = currentTime.plusMinutes(minutes);
         }
+        cdrRecordRepository.saveAll(records);
     }
 
     private String generateRandomMsisdn() {

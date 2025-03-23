@@ -19,7 +19,7 @@ public class UDRController {
 
     @GetMapping("/udr/{msisdn}")
     public UDRDto getUDR(@PathVariable String msisdn, @RequestParam(required = false) String yearMonth) {
-        Optional<YearMonth> ym = yearMonth != null ? Optional.of(YearMonth.parse(yearMonth)) : Optional.empty();
+        Optional<YearMonth> ym = Optional.ofNullable(yearMonth).map(YearMonth::parse);
         return udrService.getUDR(msisdn, ym);
     }
 

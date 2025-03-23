@@ -1,5 +1,6 @@
 package ru.nexignbootcamp.cdrmicroservice.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.nexignbootcamp.cdrmicroservice.model.CDRRecord;
@@ -18,13 +19,10 @@ import java.util.UUID;
  * Создает CSV-файлы с данными о звонках абонентов.
  */
 @Service
+@RequiredArgsConstructor
 public class CDRReportService {
     private final CDRRecordRepository cdrRecordRepository;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-
-    public CDRReportService(CDRRecordRepository cdrRecordRepository) {
-        this.cdrRecordRepository = cdrRecordRepository;
-    }
 
     /**
      * Генерирует отчет CDR для указанного абонента и периода.
@@ -34,7 +32,7 @@ public class CDRReportService {
      * @param end    конец периода
      * @return UUID сгенерированного отчета
      */
-    public String generateCDRReport(String msisdn, LocalDateTime start, LocalDateTime end) {
+    public String generateCDRReport(String msisdn, LocalDateTime start, LocalDateTime end) throws IOException {
         String uuid = UUID.randomUUID().toString();
         String fileName = msisdn + "_" + uuid + ".csv";
         java.nio.file.Path path = Paths.get("reports", fileName);
@@ -42,10 +40,9 @@ public class CDRReportService {
         try (FileWriter writer = new FileWriter(path.toFile())) {
             List<CDRRecord> records = cdrRecordRepository.findByMsisdnAndPeriod(msisdn, start, end);
             for (CDRRecord record : records) {
-                writer.write(String.format("%s,%s,%s,%s,%s\n", record.getCallType(), record.getInitiatorMsisdn(), record.getReceiverMsisdn(), record.getStartTime().format(formatter), record.getEndTime().format(formatter)));
+                writer.write(String.format("%s,%s,%s,%s,%s\n",
+                        record.getCallType(), record.getInitiatorMsisdn(), record.getReceiverMsisdn(), record.getStartTime().format(formatter), record.getEndTime().format(formatter)));
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка при генерации CDR отчета", e);
         }
         return uuid;
     }

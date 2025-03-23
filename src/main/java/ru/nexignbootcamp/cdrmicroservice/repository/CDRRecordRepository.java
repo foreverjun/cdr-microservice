@@ -20,10 +20,11 @@ public interface CDRRecordRepository extends JpaRepository<CDRRecord, Long> {
 
         Long getTotalDurationInSeconds();
     }
-    @Query(value = "SELECT initiator_msisdn AS msisdn, SUM(TIMESTAMPDIFF(SECOND, start_time, end_time)) AS totalDurationInSeconds FROM cdr_record WHERE call_type = '01' AND initiator_msisdn IN (SELECT msisdn FROM subscriber) AND start_time >= :start AND start_time < :end GROUP BY initiator_msisdn", nativeQuery = true)
+
+    @Query(value = "SELECT initiator_msisdn AS msisdn, SUM(TIMESTAMPDIFF(SECOND, start_time, end_time)) AS totalDurationInSeconds FROM cdr_record WHERE call_type = '01' AND start_time >= :start AND start_time < :end GROUP BY initiator_msisdn", nativeQuery = true)
     List<CallDurationSummary> getOutgoingTotals(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query(value = "SELECT receiver_msisdn AS msisdn, SUM(TIMESTAMPDIFF(SECOND, start_time, end_time)) AS totalDurationInSeconds FROM cdr_record WHERE call_type = '02' AND receiver_msisdn IN (SELECT msisdn FROM subscriber) AND start_time >= :start AND start_time < :end GROUP BY receiver_msisdn", nativeQuery = true)
+    @Query(value = "SELECT receiver_msisdn AS msisdn, SUM(TIMESTAMPDIFF(SECOND, start_time, end_time)) AS totalDurationInSeconds FROM cdr_record WHERE call_type = '02'  AND start_time >= :start AND start_time < :end GROUP BY receiver_msisdn", nativeQuery = true)
     List<CallDurationSummary> getIncomingTotals(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query(value = "SELECT SUM(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM cdr_record WHERE call_type = '01' AND initiator_msisdn = :msisdn", nativeQuery = true)
